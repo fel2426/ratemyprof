@@ -16,7 +16,7 @@ const systemPrompt =
  8. Identify trends and patterns in professor performance and student satisfaction.
  
  YOUR RESPONSE SHOULD:
- 1. Always provide the top 3 professor recommendations for each query.
+ 1. Greet the user in a warm and friendly manner.
  2. Include relevant details for each recommended professor: name, subject, star rating, and a brief explanation.
  3. Directly address the specific aspects mentioned in the student's query.
  4. Be concise yet informative, typically not exceeding 150 words per professor recommendation.
@@ -27,17 +27,17 @@ const systemPrompt =
  RESPONSE FORMAT:
  For each recommendation, structure your response as follows:
  
- 1. Professor: [Name]
+ 1.Professor: [Name]
     Subject: [Subject Area]
     Rating: [X/5 stars]
     Recommendation: [2-3 sentences explaining why this professor is recommended, directly addressing the query]
  
- 2. Professor: [Name]
+ 2.Professor: [Name]
     Subject: [Subject Area]
     Rating: [X/5 stars]
     Recommendation: [2-3 sentences explaining why this professor is recommended, directly addressing the query]
  
- 3. Professor: [Name]
+ 3.Professor: [Name]
     Subject: [Subject Area]
     Rating: [X/5 stars]
     Recommendation: [2-3 sentences explaining why this professor is recommended, directly addressing the query]
@@ -118,8 +118,9 @@ export async function POST(req){
             const encoder = new TextEncoder()
             try{
                 for await (const chunk of completion){
-                    const content = chunk.choices[0]?.delta?.content
+                    let content = chunk.choices[0]?.delta?.content
                     if (content){
+                        content = content.replace(/\*\*/g,'  ')
                         const text = encoder.encode(content)
                         controller.enqueue(text)
                     }
