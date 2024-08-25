@@ -23,8 +23,11 @@ def embed_text():
     data = request.json
     text = data['text']
     
+    print(text)
     # Generate the embeddings
     embeddings = model.encode(text).tolist()
+    
+    
     
     # Return the embeddings as JSON
     return jsonify({'embeddings': embeddings})

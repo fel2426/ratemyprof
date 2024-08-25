@@ -58,20 +58,30 @@ const systemPrompt =
  
  Remember, your goal is to assist students in making informed decisions about their professors and courses, ultimately contributing to their academic success and satisfaction.
  `
+ 
+
 
 export async function POST(req){
-      const data = await req.json()
+    
+  const data = await req.json()
+
+    const isUrl = data[data.length-1].content.startsWith('http://') || data[data.length-1].content.startsWith('https://');
       
-      const response = await fetch('http://localhost:5001/embed', {
+    const endpoints = !isUrl? 'http://localhost:5001/embed': 'http://localhost:5002/scrape'
+
+    req = !isUrl? { text: data[data.length - 1].content }: { url: data[data.length - 1].content }
+
+    let resultsrange = !isUrl? 3: 1
+
+      const response = await fetch(endpoints, {
         method: 'POST',
       headers: {
           'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text: data[data.length - 1].content }),
+      body: JSON.stringify(req),
       });
-      console.log(response)
-      const embedding = await response.json();
       
+      const embedding = await response.json();      
 
       const pc = new Pinecone({
         apiKey: process.env.PINECONE_API_KEY,
@@ -85,7 +95,7 @@ export async function POST(req){
     })
 
       const results = await index.query({
-        topK: 3,
+        topK: resultsrange,
         includeMetadata: true,
         vector:embedding.embeddings
       })
