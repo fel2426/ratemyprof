@@ -75,14 +75,18 @@ export async function POST(req){
       const pc = new Pinecone({
         apiKey: process.env.PINECONE_API_KEY,
       })
-      const index = pc.index('rag', {namespace:'ns1'})
-      const openai = new OpenAI()
-
+      const index = pc.index('rag').namespace('ns1')
+      
+      
+      const openai = new OpenAI({
+        baseURL: "https://openrouter.ai/api/v1",
+        apiKey: process.env.OPENROUTER_API_KEY,
+    })
 
       const results = await index.query({
         topK: 3,
         includeMetadata: true,
-        vector:embedding.data[0].embedding
+        vector:embedding.embeddings
       })
 
       let resultString = '\n\nReturned results from vector db (done automatically): '
