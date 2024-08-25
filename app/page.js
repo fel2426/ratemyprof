@@ -1,6 +1,6 @@
-'use client'
+'use client';
 import { useEffect, useRef, useState } from "react";
-import { Box, Stack, TextField, Button, Typography, Paper } from "@mui/material";
+import { Box, Stack, TextField, Button, Typography, Paper, Divider } from "@mui/material";
 
 export default function Home() {
   const [messages, setMessages] = useState([
@@ -10,6 +10,10 @@ export default function Home() {
     }
   ]);
   const [message, setMessage] = useState('');
+  const [sentiment, setSentiment] = useState(null);
+  const [selectedProfessor, setSelectedProfessor] = useState('');
+  const [professorSentiment, setProfessorSentiment] = useState(null);
+  const [professorTrends, setProfessorTrends] = useState(null);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -30,39 +34,57 @@ export default function Home() {
     ]);
     setMessage('');
 
-    const response = fetch('/api/chat', {
-      method: "POST",
-      headers: {
-        'Content-type': 'application/json'
-      },
-      body: JSON.stringify([...messages, { role: "user", content: message }])
-    }).then(async (res) => {
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
+    try {
+      const response = await fetch('/api/chat', {
+        method: "POST",
+        headers: {
+          'Content-type': 'application/json'
+        },
+        body: JSON.stringify([...messages, { role: "user", content: message }])
+      });
 
-      let result = ' ';
-      return reader.read().then(function processText({ done, value }) {
-        if (done) {
-          return result;
-        }
-        const text = decoder.decode(value || new Uint8Array(), { stream: true });
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let result = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        result += decoder.decode(value, { stream: true });
         setMessages((messages) => {
-          let lastMessage = messages[messages.length - 1];
-          let otherMessages = messages.slice(0, messages.length - 1);
+          const lastMessage = messages[messages.length - 1];
           return [
-            ...otherMessages,
-            { ...lastMessage, content: lastMessage.content + text }
+            ...messages.slice(0, -1),
+            { ...lastMessage, content: lastMessage.content + result }
           ];
         });
-        return reader.read().then(processText);
-      });
-    });
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       sendMessage();
+    }
+  };
+
+  const fetchProfessorData = async () => {
+    if (selectedProfessor.trim() === '') return;
+
+    try {
+      // Fetch sentiment and trends data for the selected professor
+      const sentimentResponse = await fetch(`/get_professor_sentiment?name=${encodeURIComponent(selectedProfessor)}`);
+      const sentimentResult = await sentimentResponse.json();
+      setProfessorSentiment(sentimentResult);
+
+      const trendsResponse = await fetch(`/get_professor_trends?name=${encodeURIComponent(selectedProfessor)}`);
+      const trendsResult = await trendsResponse.json();
+      setProfessorTrends(trendsResult);
+    } catch (error) {
+      console.error('Error fetching professor data:', error);
     }
   };
 
@@ -171,6 +193,48 @@ export default function Home() {
           </Stack>
         </Box>
       </Paper>
+
+      <Box
+        mt={4}
+        width="500px"
+        padding="16px"
+      
+      >
+        <Typography variant="h6">Professor Insights:</Typography>
+        <Stack direction="row" spacing={2} mt={2}>
+          <TextField
+            label="Professor Name"
+            variant="outlined"
+            fullWidth
+            value={selectedProfessor}
+            onChange={(e) => setSelectedProfessor(e.target.value)}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={fetchProfessorData}
+          >
+            Get Insights
+          </Button>
+        </Stack>
+        {professorSentiment && (
+          <Box mt={2}>
+            <Typography variant="h6">Sentiment Analysis for {selectedProfessor}:</Typography>
+            <Typography>Positive: {professorSentiment.pos}</Typography>
+            <Typography>Neutral: {professorSentiment.neu}</Typography>
+            <Typography>Negative: {professorSentiment.neg}</Typography>
+            <Typography>Compound: {professorSentiment.compound}</Typography>
+          </Box>
+        )}
+        {professorTrends && (
+          <Box mt={2}>
+            <Typography variant="h6">Trends for {selectedProfessor}:</Typography>
+            <Typography>Average Rating: {professorTrends.averageRating}</Typography>
+            <Typography>Number of Reviews: {professorTrends.reviewCount}</Typography>
+            {/* Display other trend details as needed */}
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 }

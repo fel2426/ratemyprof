@@ -60,7 +60,8 @@ const systemPrompt =
  `
 
 export async function POST(req){
-    const data = await req.json()
+      const data = await req.json()
+      
       const response = await fetch('http://localhost:5001/embed', {
         method: 'POST',
       headers: {
@@ -68,7 +69,7 @@ export async function POST(req){
       },
       body: JSON.stringify({ text: data[data.length - 1].content }),
       });
-      
+      console.log(response)
       const embedding = await response.json();
       
 
