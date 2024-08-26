@@ -11,8 +11,7 @@ def embed_text():
     # Get the text from the request
     data = request.json
     text = data['text']
-    
-    print(text)
+
     # Generate the embeddings
     embeddings = model.encode(text).tolist()
     
