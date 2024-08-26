@@ -3,10 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"next dev\"  \"npm run flask2\" \"npm run flask1\"",
+    "dev": "concurrently \"next dev\" \"npm run flask\"",
     "build": "next build",
-    "flask1": "python flask_app.py",
-    "flask2": "python flask_scrape.py",
+    "flask": "python flask_app.py",
     "start": "next start",
     "lint": "next lint"
   },
